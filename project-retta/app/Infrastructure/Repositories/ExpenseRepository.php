@@ -91,6 +91,25 @@ class ExpenseRepository implements ExpenseRepositoryInterface
         return ExpenseModel::where('created_at', '<', $date)->delete();
     }
 
+    public function sumNetValueTotal(): float
+    {
+        return ExpenseModel::sum('net_value');
+    }
+
+    public function sumExpenseType(): Collection
+    {
+        return ExpenseModel::select('expense_type', \DB::raw('SUM(net_value) as total'))
+            ->groupBy('expense_type')
+            ->orderBy('total', 'desc')
+            ->get()
+            ->map(function ($item) {
+                return [
+                    'expense_type' => $item->expense_type,
+                    'total'        => number_format($item->total, 2, ',', '.'),
+                ];
+            });
+    }
+
     private function modelToEntity(ExpenseModel $model): ExpenseEntity
     {
         $expense = new ExpenseEntity();

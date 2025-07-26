@@ -71,4 +71,19 @@ class ExpenseController extends Controller
         return response()->json([ 'deleted' => $count ]);
     }
 
+    public function sumNetValueTotal(): JsonResponse
+    {
+        $total = $this->repository->sumNetValueTotal();
+
+        $format = number_format($total, 2, ',', '.');
+
+        return response()->json($format);
+    }
+
+    public function sumExpenseType(): JsonResponse
+    {
+        $result = $this->repository->sumExpenseType();
+
+        return response()->json($result);
+    }
 }
