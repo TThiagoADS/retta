@@ -61,8 +61,6 @@ class DeputyRepository implements DeputyRepositoryInterface
         $model = isset($deputy->id)
             ? DeputyModel::find($deputy->id) ?? new DeputyModel()
             : new DeputyModel();
-
-        // CORRIGIDO: Usando as propriedades diretas da Entity
         $model->name = $deputy->nome;
         $model->party_abbr = $deputy->siglaPartido;
         $model->state_abbr = $deputy->siglaUf;
@@ -74,7 +72,6 @@ class DeputyRepository implements DeputyRepositoryInterface
 
         $model->save();
 
-        // Atualizar ID na entity se foi criação
         if (!isset($deputy->id)) {
             $deputy->id = $model->id;
         }
@@ -82,7 +79,6 @@ class DeputyRepository implements DeputyRepositoryInterface
 
     private function modelToEntity(DeputyModel $model): Deputy
     {
-        // CORRIGIDO: Criando Entity e preenchendo propriedades manualmente
         $deputy = new Deputy();
 
         $deputy->id = $model->id;
