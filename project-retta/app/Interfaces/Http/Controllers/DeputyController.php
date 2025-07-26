@@ -49,4 +49,11 @@ class DeputyController extends Controller
         return response()->json($deputy);
     }
 
+    public function getWithExpenses(): JsonResponse
+    {
+        $deputies = $this->repository->getWithExpenses();
+
+        return response()->json($deputies);
+    }
+
 }

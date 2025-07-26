@@ -43,6 +43,14 @@ return [
             'after_commit' => false,
         ],
 
+        'deputies' => [
+        'driver' => 'database',
+        'table' => 'jobs',
+        'queue' => 'deputies',
+        'retry_after' => 300,
+        'after_commit' => false,
+        ],
+
         'beanstalkd' => [
             'driver' => 'beanstalkd',
             'host' => env('BEANSTALKD_QUEUE_HOST', 'localhost'),
