@@ -22,4 +22,8 @@ interface ExpenseRepositoryInterface
 
     public function deleteOlderThan(\DateTime $date): int;
 
+    public function sumNetValueTotal(): float;
+
+    public function sumExpenseType(): \Illuminate\Support\Collection;
+
 }

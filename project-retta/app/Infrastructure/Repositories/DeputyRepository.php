@@ -3,9 +3,12 @@
 namespace App\Infrastructure\Repositories;
 
 use App\Domain\Entities\Deputy;
+use App\Domain\Entities\Expense as ExpenseEntity;
 use App\Domain\Repositories\DeputyRepositoryInterface;
 use App\Models\Deputy as DeputyModel;
+use App\Models\Expense as ExpenseModel;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 
 class DeputyRepository implements DeputyRepositoryInterface
 {
@@ -49,11 +52,47 @@ class DeputyRepository implements DeputyRepositoryInterface
             ->map(fn(DeputyModel $model) => $this->modelToEntity($model));
     }
 
-    public function getWithExpenses(): Collection
+public function getWithExpenses(): Collection
+{
+    $deputies = DeputyModel::with('expenses')->get()->map(function (DeputyModel $deputy) {
+        $totalExpenses = $deputy->expenses->sum('net_value');
+        return [
+            'id' => $deputy->id,
+            'name' => $deputy->name,
+            'state_abbr' => $deputy->state_abbr,
+            'photo_url' => $deputy->photo_url,
+            'party_abbr' => $deputy->party_abbr,
+            'total_expenses' => $totalExpenses,
+        ];
+    });
+
+    return $deputies->sortByDesc('total_expenses')->values()->map(function($item) {
+        $item['total_expenses'] = number_format($item['total_expenses'], 2, ',', '.');
+        return $item;
+    });
+}
+
+
+
+
+    private function modelToExpenseEntity(ExpenseModel $model): ExpenseEntity
     {
-        return DeputyModel::with('expenses')
-            ->get()
-            ->map(fn(DeputyModel $model) => $this->modelToEntity($model));
+        $expense = new ExpenseEntity();
+        $expense->id = $model->id;
+        $expense->expense_type = $model->expense_type;
+        $expense->net_value = $model->net_value;
+        return $expense;
+    }
+
+
+    public function sumDeputy(): int
+    {
+        return DeputyModel::count();
+    }
+
+    public function sumStateAbbr(): int
+    {
+        return DeputyModel::whereNotNull('state_abbr')->distinct('state_abbr')->count('state_abbr');
     }
 
     public function save(Deputy $deputy): void
@@ -75,6 +114,15 @@ class DeputyRepository implements DeputyRepositoryInterface
         if (!isset($deputy->id)) {
             $deputy->id = $model->id;
         }
+    }
+
+   public function countDeputiesByParty()
+    {
+        $result = DeputyModel::select('party_abbr', DB::raw('count(*) as total'))
+                            ->groupBy('party_abbr')
+                            ->get();
+
+        return response()->json($result);
     }
 
     private function modelToEntity(DeputyModel $model): Deputy

@@ -49,6 +49,20 @@ class DeputyController extends Controller
         return response()->json($deputy);
     }
 
+    public function sumNetValueTotal(): JsonResponse
+    {
+        $total = $this->repository->sumNetValueTotal();
+
+        return response()->json([$total]);
+    }
+
+    public function sumStateAbbr(): JsonResponse
+    {
+        $total = $this->repository->sumStateAbbr();
+
+        return response()->json($total);
+    }
+
     public function getWithExpenses(): JsonResponse
     {
         $deputies = $this->repository->getWithExpenses();
@@ -56,4 +70,19 @@ class DeputyController extends Controller
         return response()->json($deputies);
     }
 
+    public function sumDeputy(): JsonResponse
+    {
+        $total = $this->repository->sumDeputy();
+
+        return response()->json([$total]);
+    }
+
+    public function countDeputiesByParty(): JsonResponse
+    {
+        $result = $this->repository->countDeputiesByParty();
+
+        $arrayResult = is_object($result) && method_exists($result, 'toArray') ? $result->toArray() : $result;
+
+        return response()->json($arrayResult);
+    }
 }

@@ -1,6 +1,5 @@
 <?php
 
-// Arquivo: app/Application/Jobs/FetchDeputyExpensesJob.php
 namespace App\Application\Jobs;
 
 use Illuminate\Bus\Queueable;
