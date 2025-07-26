@@ -1,22 +1,56 @@
 <?php
-
 namespace App\Infrastructure\Repositories;
 
-use App\Domain\Entities\Expense;
+use App\Domain\Entities\Expense as ExpenseEntity;
 use App\Domain\Repositories\ExpenseRepositoryInterface;
-use App\Infrastructure\Models\ExpenseModel;
+use App\Models\Expense as ExpenseModel;
 use Illuminate\Support\Collection;
 
 class ExpenseRepository implements ExpenseRepositoryInterface
 {
-    public function findById(int $id): ?Expense
+    public function save(ExpenseEntity $expense): void
+    {
+        // 1) Busca ou instancia pela chave única (deputy + documento)
+        $model = ExpenseModel::firstOrNew([
+            'deputy_id'     => $expense->deputy_id,
+            'document_code' => $expense->document_code,
+        ]);
+
+        // 2) Atribui sempre os campos explicitamente, usando nomes de atributo da entidade
+        $model->deputy_id            = $expense->deputy_id;
+        $model->year                 = $expense->year;
+        $model->month                = $expense->month;
+        $model->expense_type         = $expense->expense_type;
+        $model->document_code        = $expense->document_code;
+        $model->document_type        = $expense->document_type;
+        $model->document_type_code   = $expense->document_type_code;
+        $model->document_date        = $expense->document_date;
+        $model->document_number      = $expense->document_number;
+        $model->gross_value          = $expense->gross_value;
+        $model->document_url         = $expense->document_url;
+        $model->supplier_name        = $expense->supplier_name;
+        $model->supplier_cnpj_cpf    = $expense->supplier_cnpj_cpf;
+        $model->net_value            = $expense->net_value;
+        $model->glosa_value          = $expense->glosa_value;
+        $model->reimbursement_number = $expense->reimbursement_number;
+        $model->batch_code           = $expense->batch_code;
+        $model->installment          = $expense->installment;
+
+        // 3) Persiste no banco de dados
+        $model->save();
+
+        // 4) Atualiza o ID na entidade, se necessário
+        if (empty($expense->id)) {
+            $expense->id = $model->id;
+        }
+    }
+
+    public function findById(int $id): ?ExpenseEntity
     {
         $model = ExpenseModel::find($id);
-
         if (!$model) {
             return null;
         }
-
         return $this->modelToEntity($model);
     }
 
@@ -24,38 +58,65 @@ class ExpenseRepository implements ExpenseRepositoryInterface
         int $deputyId,
         int $documentCode,
         ?int $reimbursementNumber = null
-    ): ?Expense {
+    ): ?ExpenseEntity
+    {
         $query = ExpenseModel::where('deputy_id', $deputyId)
             ->where('document_code', $documentCode);
 
         if ($reimbursementNumber !== null) {
             $query->where('reimbursement_number', $reimbursementNumber);
-        } else {
-            $query->whereNull('reimbursement_number');
         }
 
         $model = $query->first();
-
-        return $model ? $this->modelToEntity($model) : null;
+        if (!$model) {
+            return null;
+        }
+        return $this->modelToEntity($model);
     }
 
     public function findByDeputyId(int $deputyId): Collection
     {
-        return ExpenseModel::where('deputy_id', $deputyId)
-            ->get()
-            ->map(fn($model) => $this->modelToEntity($model));
+        $models = ExpenseModel::where('deputy_id', $deputyId)->get();
+        return $models->map(fn($model) => $this->modelToEntity($model));
     }
 
     public function findByPeriod(int $year, int $month): Collection
     {
-        return ExpenseModel::where('year', $year)
+        $models = ExpenseModel::where('year', $year)
             ->where('month', $month)
-            ->get()
-            ->map(fn($model) => $this->modelToEntity($model));
+            ->get();
+
+        return $models->map(fn($model) => $this->modelToEntity($model));
     }
 
     public function deleteOlderThan(\DateTime $date): int
     {
         return ExpenseModel::where('created_at', '<', $date)->delete();
+    }
+
+    private function modelToEntity(ExpenseModel $model): ExpenseEntity
+    {
+        $expense = new ExpenseEntity();
+        $expense->id                   = $model->id;
+        $expense->deputy_id            = $model->deputy_id;
+        $expense->year                 = $model->year;
+        $expense->month                = $model->month;
+        $expense->expense_type         = $model->expense_type;
+        $expense->document_code        = $model->document_code;
+        $expense->document_type        = $model->document_type;
+        $expense->document_type_code   = $model->document_type_code;
+        $expense->document_date        = $model->document_date;
+        $expense->document_number      = $model->document_number;
+        $expense->gross_value          = $model->gross_value;
+        $expense->document_url         = $model->document_url;
+        $expense->supplier_name        = $model->supplier_name;
+        $expense->supplier_cnpj_cpf    = $model->supplier_cnpj_cpf;
+        $expense->net_value            = $model->net_value;
+        $expense->glosa_value          = $model->glosa_value;
+        $expense->reimbursement_number = $model->reimbursement_number;
+        $expense->batch_code           = $model->batch_code;
+        $expense->installment          = $model->installment;
+
+        return $expense;
     }
 }

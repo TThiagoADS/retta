@@ -15,6 +15,8 @@ interface DeputyRepositoryInterface
 
     public function getActive(): Collection;
 
+    public function getWithExpenses(): Collection;
+
     public function findByParty(string $partyAbbr): Collection;
 
     public function findByState(string $stateAbbr): Collection;

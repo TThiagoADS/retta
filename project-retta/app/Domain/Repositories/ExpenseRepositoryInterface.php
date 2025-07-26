@@ -20,6 +20,6 @@ interface ExpenseRepositoryInterface
 
     public function findByPeriod(int $year, int $month): \Illuminate\Support\Collection;
 
-
     public function deleteOlderThan(\DateTime $date): int;
+
 }

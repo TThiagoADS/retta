@@ -3,9 +3,24 @@
 use Illuminate\Support\Facades\Route;
 use App\Interfaces\Http\Controllers\User\CreateUserController;
 use App\Interfaces\Http\Controllers\Auth\AuthController;
+use App\Interfaces\Http\Controllers\DeputyController;
+use App\Interfaces\Http\Controllers\ExpenseController;
 
-//User routes
-Route::post('/user', [CreateUserController::class, 'store']);
 
-//Auth routes
-Route::post('/login', [AuthController::class, 'login']);
+    Route::post('/user', [CreateUserController::class, 'store']);
+
+
+    Route::post('/login', [AuthController::class, 'login']);
+
+
+    Route::get('deputies',           [DeputyController::class, 'list']);
+    Route::post('deputies/fetch',    [DeputyController::class, 'fetchAndStore']);
+    Route::get('deputies/{id}/expenses', [DeputyController::class, 'expenses']);
+    Route::get('getWithExpenses', [DeputyController::class, 'getWithExpenses']);
+
+    Route::prefix('expenses')->group(function () {
+        Route::get('/',                [ExpenseController::class, 'index']);
+        Route::get('{id}',             [ExpenseController::class, 'show']);
+        Route::delete('{id}',          [ExpenseController::class, 'destroy']);
+        Route::post('delete-older-than',[ExpenseController::class, 'deleteOlderThan']);
+    });
