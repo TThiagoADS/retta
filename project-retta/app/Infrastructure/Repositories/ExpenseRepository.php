@@ -10,13 +10,12 @@ class ExpenseRepository implements ExpenseRepositoryInterface
 {
     public function save(ExpenseEntity $expense): void
     {
-        // 1) Busca ou instancia pela chave única (deputy + documento)
+
         $model = ExpenseModel::firstOrNew([
             'deputy_id'     => $expense->deputy_id,
             'document_code' => $expense->document_code,
         ]);
 
-        // 2) Atribui sempre os campos explicitamente, usando nomes de atributo da entidade
         $model->deputy_id            = $expense->deputy_id;
         $model->year                 = $expense->year;
         $model->month                = $expense->month;
@@ -36,10 +35,8 @@ class ExpenseRepository implements ExpenseRepositoryInterface
         $model->batch_code           = $expense->batch_code;
         $model->installment          = $expense->installment;
 
-        // 3) Persiste no banco de dados
         $model->save();
 
-        // 4) Atualiza o ID na entidade, se necessário
         if (empty($expense->id)) {
             $expense->id = $model->id;
         }
