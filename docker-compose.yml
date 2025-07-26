@@ -1,0 +1,32 @@
+version: '3.8'
+services:
+  # Laravel
+  app:
+    build:
+      context: ./project-retta
+      dockerfile: Dockerfile
+    image: laravel_app
+    working_dir: /var/www
+    # Em produção você pode remover volumes:
+    # volumes:
+    #   - ./project-retta:/var/www
+    env_file:
+      - .env.railway
+    depends_on:
+      - frontend
+    networks:
+      - app-network
+
+  # Vue + Vuetify
+  frontend:
+    build:
+      context: ./retta-front
+      dockerfile: Dockerfile
+    image: vue_frontend
+    ports:
+      - "80:80"
+    networks:
+      - app-network
+
+networks:
+  app-network:
