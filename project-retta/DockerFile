@@ -1,28 +1,28 @@
-FROM composer:2.8 AS vendor
-WORKDIR /app
-COPY composer.json composer.lock ./
-RUN composer install --no-dev --optimize-autoloader
-
 FROM php:8.2-fpm-alpine
+
+# Instalar dependências do sistema
+RUN apk add --no-cache \
+    libzip-dev \
+    zip \
+    unzip \
+    curl \
+    git \
+    bash \
+    && docker-php-ext-install pdo_mysql zip
+
+# Instalar o Composer
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+
 WORKDIR /var/www
 
-RUN apk add --no-cache \
-        libpng-dev \
-        libjpeg-turbo-dev \
-        libzip-dev \
-        oniguruma-dev \
-        icu-dev \
-    && docker-php-ext-configure zip \
-    && docker-php-ext-install \
-        pdo_mysql mbstring exif pcntl bcmath zip gd intl
-
-COPY --from=vendor /app/vendor ./vendor
-
+# Copiar o restante do código da aplicação (INCLUINDO artisan)
 COPY . .
 
-RUN chown -R www-data:www-data \
-        storage bootstrap/cache
+# Instalar dependências do PHP
+RUN composer install --no-dev --optimize-autoloader
 
-EXPOSE 9000
+# Ajustar permissões (opcional)
+RUN chown -R www-data:www-data /var/www
 
-CMD ["php-fpm"]
+CMD ["php", "artisan", "serve", "--host=0.0.0.0", "--port=8000"]
+
