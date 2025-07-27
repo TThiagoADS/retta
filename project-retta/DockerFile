@@ -1,28 +1,21 @@
-FROM php:8.2-fpm-alpine
+FROM php:8.2-cli
 
-# Instalar dependências do sistema
-RUN apk add --no-cache \
-    libzip-dev \
-    zip \
-    unzip \
-    curl \
-    git \
-    bash \
-    && docker-php-ext-install pdo_mysql zip
+WORKDIR /var/www/html
 
-# Instalar o Composer
-COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+RUN apt-get update && apt-get install -y \
+    zip unzip curl libzip-dev libonig-dev \
+    && docker-php-ext-install pdo_mysql zip mbstring
 
-WORKDIR /var/www
-
-# Copiar o restante do código da aplicação (INCLUINDO artisan)
 COPY . .
 
-# Instalar dependências do PHP
+RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+
 RUN composer install --no-dev --optimize-autoloader
 
-# Ajustar permissões (opcional)
-RUN chown -R www-data:www-data /var/www
+RUN php artisan key:generate
 
-CMD ["php", "artisan", "serve", "--host=0.0.0.0", "--port=8000"]
+# Para o worker, não precisamos expor porta
+# EXPOSE 8080
 
+# Worker command - sem migrate pois o serviço web já faz isso
+CMD php artisan queue:work --verbose --tries=3 --timeout=90 --memory=512
