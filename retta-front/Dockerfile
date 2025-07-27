@@ -1,23 +1,36 @@
-FROM node:18-alpine3.19 as build-stage
+# Etapa 1: Build do frontend
+FROM node:18 as build-frontend
+
 WORKDIR /app
 
-# Copia os arquivos de dependências do yarn
-COPY package.json yarn.lock ./
-
-# Instala as dependências via yarn
-RUN yarn install --frozen-lockfile
-
-# Copia o resto dos arquivos
 COPY . .
 
-# Builda o projeto
-RUN yarn build
+RUN npm install && npm run build
 
-# Etapa final - Nginx para servir os arquivos estáticos
-FROM nginx:alpine
+# Etapa 2: Laravel + Nginx ou Artisan serve
+FROM php:8.2-fpm
 
-# Copia o arquivo de configuração do nginx (ajuste o caminho conforme necessário)
-COPY nginx/default.conf /etc/nginx/conf.d/default.conf
+# Instala dependências do Laravel
+RUN apt-get update && apt-get install -y \
+    zip unzip curl git libpng-dev libonig-dev libxml2-dev libzip-dev \
+    && docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath zip
 
-# Copia os arquivos buildados do frontend
-COPY --from=build-stage /app/dist /usr/share/nginx/html
+# Instala Composer
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+
+# Copia o Laravel
+WORKDIR /var/www
+COPY ./project-retta /var/www
+
+# Copia o frontend build para dentro do Laravel
+COPY --from=build-frontend /app/dist /var/www/public
+
+# Instala dependências do Laravel
+RUN composer install --no-dev --optimize-autoloader
+
+# Dá permissão
+RUN chown -R www-data:www-data /var/www && chmod -R 775 /var/www/storage
+
+EXPOSE 8000
+
+CMD ["php", "artisan", "serve", "--host=0.0.0.0", "--port=8000"]
